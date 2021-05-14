@@ -135,6 +135,11 @@ REOPEN="yes"
 #   File name of the app bundle in the dmg to verify and copy (include .app).
 #   When not given, the appName is derived from the $name.
 #
+# - appRename: (optional)
+#   File name in the destination folder(include .app).
+#   Usefull when app in dmg is the same but you want all version like eclipse-ide eclipse-java etc
+#   When not given, the appName is used.
+#
 # - targetDir: (optional)
 #   dmg or zip:
 #     Applications will be copied to this directory.
@@ -167,7 +172,24 @@ REOPEN="yes"
 # - updateToolRunAsCurrentUser:
 #   When this variable is set (any value), $updateTool will be run as the current user.
 #
+VM_LICENCE=""
 
+# MATH: Functions
+applyVmwareLicence(){ 
+    if [[ -z $VM_LICENCE ]]; then
+        printlog "need to provide 'VM_LICENCE'"
+        exit 1
+    fi
+    #if [[ -z $VM_VERSION ]]; then
+    #    printlog "need to provide 'VM_VERSION'"
+    #    exit 1
+    #fi
+    echo "Installation de la license"
+    sudo /Applications/VMware\ Fusion.app/Contents/Library/licenses/vmware-licenseTool enter "$VM_LICENCE" "DépartementInformatique" "Cegep Shawinigan" "$appNewVersion" "Vmware Fusion for Mac OS" ""
+    echo "Installation des droits de lapplications"
+    sudo /Applications/VMware\ Fusion.app/Contents/Library/Initialize\ VMware\ Fusion.tool set
+    echo "All installations completed"
+}
 
 # MARK: Functions
 
@@ -318,11 +340,18 @@ getAppVersion() {
     fi
     
     # get all apps matching name
-    applist=$(mdfind "kind:application $appName" -0 )
+    # check if we rename app
+    if [[ -z $appRename ]]; then
+        localAppName=$appName
+    else
+        localAppName=$appRename
+    fi
+
+    applist=$(mdfind "kind:application $localAppName" -0 )
     if [[ $applist = "" ]]; then
         printlog "Spotlight not returning any app, trying manually in /Applications."
-        if [[ -d "/Applications/$appName" ]]; then
-            applist="/Applications/$appName"
+        if [[ -d "/Applications/$localAppName" ]]; then
+            applist="/Applications/$localAppName"
         fi
     fi
      
@@ -336,10 +365,10 @@ getAppVersion() {
             appversion=$(defaults read $installedAppPath/Contents/Info.plist CFBundleShortVersionString) #Not dependant on Spotlight indexing
             printlog "found app at $installedAppPath, version $appversion"
         else
-            printlog "could not determine location of $appName"
+            printlog "could not determine location of $localAppName"
         fi
     else
-        printlog "could not find $appName"
+        printlog "could not find $localAppName"
     fi
 }
 
@@ -508,6 +537,14 @@ installAppWithPath() { # $1: path to app to install in $targetDir
     if [ "$(whoami)" != "root" ]; then
         # not running as root
         cleanupAndExit 6 "not running as root, exiting"
+    fi
+    
+    # check if we rename app
+    if [[ -z $appRename ]]; then
+        printlog "app will not be renamed"
+    else
+        printlog "App will be renamed: ${appRename}"
+        appName=$appRename
     fi
 
     # remove existing application
@@ -800,7 +837,6 @@ printlog "################## $label"
 
 # get current user
 currentUser=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ { print $3 }')
-
 
 # MARK: labels in case statement
 case $label in
@@ -2606,6 +2642,60 @@ wickrme)
     appNewVersion=$( echo ${downloadURL} | sed -E 's/.*\/[a-zA-Z]*-([0-9.]*)\..*/\1/g' )
     expectedTeamID="W8RC3R952A"
     ;;
+eclipse-ide)
+    # credit: Mathieu (@mathieu244)
+    name="Eclipse"
+    type="dmg"
+    appNewVersion=$( curl -fsL https://download.eclipse.org/eclipse/downloads | grep "Latest Release" | cut -d ">" -f 2 | cut -d "L" -f 1 )
+    dateSpaceURL=$( curl -fs https://www.eclipse.org/downloads/ | grep "Download x86_64" | cut -d "/" -f 8)
+    downloadURL="https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/${dateSpaceURL}/R/eclipse-committers-${dateSpaceURL}-R-macosx-cocoa-x86_64.dmg&r=1"
+    #targetDir="/Applications/Eclipse"
+    expectedTeamID="JCDTMS22B4"
+    ;;
+eclipse-java)
+    # credit: Mathieu (@mathieu244)
+    name="Eclipse"
+    appRename="Eclipse-java.app"
+    type="dmg"
+    appNewVersion=$( curl -fsL https://download.eclipse.org/eclipse/downloads | grep "Latest Release" | cut -d ">" -f 2 | cut -d "L" -f 1 )
+    dateSpaceURL=$( curl -fs https://www.eclipse.org/downloads/ | grep "Download x86_64" | cut -d "/" -f 8)
+    downloadURL="https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/${dateSpaceURL}/R/eclipse-java-${dateSpaceURL}-R-macosx-cocoa-x86_64.dmg&r=1"
+    #targetDir="/Applications/Eclipse"
+    expectedTeamID="JCDTMS22B4"
+    ;;
+eclipse-jee)
+    # credit: Mathieu (@mathieu244)
+    name="Eclipse"
+    appRename="Eclipse-jee.app"
+    type="dmg"
+    appNewVersion=$( curl -fsL https://download.eclipse.org/eclipse/downloads | grep "Latest Release" | cut -d ">" -f 2 | cut -d "L" -f 1 )
+    dateSpaceURL=$( curl -fs https://www.eclipse.org/downloads/ | grep "Download x86_64" | cut -d "/" -f 8)
+    downloadURL="https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/${dateSpaceURL}/R/eclipse-jee-${dateSpaceURL}-R-macosx-cocoa-x86_64.dmg&r=1"
+    #targetDir="/Applications/Eclipse"
+    expectedTeamID="JCDTMS22B4"
+    ;;
+eclipse-cpp)
+    # credit: Mathieu (@mathieu244)
+    name="Eclipse"
+    appRename="Eclipse-cpp.app"
+    type="dmg"
+    appNewVersion=$( curl -fsL https://download.eclipse.org/eclipse/downloads | grep "Latest Release" | cut -d ">" -f 2 | cut -d "L" -f 1 )
+    dateSpaceURL=$( curl -fs https://www.eclipse.org/downloads/ | grep "Download x86_64" | cut -d "/" -f 8)
+    downloadURL="https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/${dateSpaceURL}/R/eclipse-cpp-${dateSpaceURL}-R-macosx-cocoa-x86_64.dmg&r=1"
+    #targetDir="/Applications/Eclipse"
+    expectedTeamID="JCDTMS22B4"
+    ;;
+eclipse-modeling)
+    # credit: Mathieu (@mathieu244)
+    name="Eclipse"
+    appRename="Eclipse-modeling.app"
+    type="dmg"
+    appNewVersion=$( curl -fsL https://download.eclipse.org/eclipse/downloads | grep "Latest Release" | cut -d ">" -f 2 | cut -d "L" -f 1 )
+    dateSpaceURL=$( curl -fs https://www.eclipse.org/downloads/ | grep "Download x86_64" | cut -d "/" -f 8)
+    downloadURL="https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/${dateSpaceURL}/R/eclipse-modeling-${dateSpaceURL}-R-macosx-cocoa-x86_64.dmg&r=1"
+    #targetDir="/Applications/Eclipse"
+    expectedTeamID="JCDTMS22B4"
+    ;;
 wickrpro)
     # credit: Søren Theilgaard (@theilgaard)
     name="WickrPro"
@@ -2780,15 +2870,17 @@ zulujdk15)
 #     | awk -F '"' '/browser_download_url/ && /pkg/ { print $4 }' | grep lts)
 #     expectedTeamID="UBF8T346G9"
 #     ;;
-# vmwarefusion)
+vmwarefusion)
 # TODO: vmwarefusion installation process needs testing
 #     # credit: Erik Stam (@erikstam)
-#     name="VMware Fusion"
-#     type="dmg"
-#     downloadURL="https://www.vmware.com/go/getfusion"
-#     appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "^location" | awk '{print $2}' | sed -E 's/.*Fusion-([0-9.]*)-.*/\1/g' )
-#     expectedTeamID="EG7KH642X6"
-#     ;;
+     name="VMware Fusion"
+     type="dmg"
+     infoURL="https://my.vmware.com/channel/public/api/v1.0/dlg/details?locale=en_US&downloadGroup=FUS-1211&productId=1040"
+     downloadURL="https://download3.vmware.com/software/fusion/file/$( curl -fsSL "${infoURL}" | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['downloadFiles'][0]['fileName'])" )"
+     appNewVersion=$( curl -fsSL "${infoURL}" | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['downloadFiles'][0]['version'])" )
+     expectedTeamID="EG7KH642X6"
+     licence="applyVmwareLicence"
+     ;;
 #wordmat)
 #    # WordMat currently not signed
 #    # credit: Søren Theilgaard (@theilgaard)
@@ -2878,8 +2970,9 @@ microsoftexcel)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.excel.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps XCEL2019 )
+    # MS update stuck on user agreement
+    #updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+    #updateToolArguments=( --install --apps XCEL2019 )
     ;;
 microsoftlicenseremovaltool)
     # credit: Isaac Ordonez (@isaac) macadmins slack
@@ -2901,8 +2994,9 @@ microsoftoffice365)
     # using MS PowerPoint as the 'stand-in' for the entire suite
     #appName="Microsoft PowerPoint.app"
     blockingProcesses=( "Microsoft AutoUpdate" "Microsoft Word" "Microsoft PowerPoint" "Microsoft Excel" "Microsoft OneNote" "Microsoft Outlook" "OneDrive" )
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install )
+    # MS update stuck on user agreement
+    #updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+    #updateToolArguments=( --install )
     ;;
 microsoftofficebusinesspro)
     name="MicrosoftOfficeBusinessPro"
@@ -2922,8 +3016,9 @@ microsoftonedrive)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.onedrive.standalone"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | cut -d "/" -f 6 | cut -d "." -f 1-3)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps ONDR18 )
+    # MS update stuck on user agreement
+    #updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+    #updateToolArguments=( --install --apps ONDR18 )
     ;;
 microsoftonenote)
     name="Microsoft OneNote"
@@ -2932,8 +3027,9 @@ microsoftonenote)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.onenote.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps ONMC2019 )
+    # MS update stuck on user agreement
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps ONMC2019 )
     ;;
 microsoftoutlook)
     name="Microsoft Outlook"
@@ -2942,8 +3038,9 @@ microsoftoutlook)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.outlook.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps OPIM2019 )
+    # MS update stuck on user agreement
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps OPIM2019 )
     ;;
 microsoftpowerpoint)
     name="Microsoft PowerPoint"
@@ -2952,8 +3049,9 @@ microsoftpowerpoint)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.powerpoint.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps PPT32019 )
+    # MS update stuck on user agreement
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps PPT32019 )
     ;;
 microsoftremotedesktop)
     name="Microsoft Remote Desktop"
@@ -2993,8 +3091,9 @@ microsoftteams)
     # Still using macadmin.software for version, as the path does not contain the version in a matching format. packageID can be used, but version is the same.
     expectedTeamID="UBF8T346G9"
     blockingProcesses=( Teams "Microsoft Teams Helper" )
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps TEAM01 )
+    # MS update stuck on user agreement
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps TEAM01 )
     ;;
 microsoftvisualstudiocode|\
 visualstudiocode)
@@ -3014,8 +3113,9 @@ microsoftword)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.word.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps MSWD2019 )
+    # MS update stuck on user agreement
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps MSWD2019 )
     ;;
 microsoftyammer)
     name="Yammer"
@@ -3203,7 +3303,7 @@ fi
 # credit: Søren Theilgaard (@theilgaard)
 if [[ -n $appNewVersion ]]; then
     printlog "Latest version of $name is $appNewVersion"
-    if [[ $appversion == $appNewVersion ]]; then
+    if [[ $appversion == *"${appNewVersion}"* ]]; then
         if [[ $DEBUG -eq 0 ]]; then
             printlog "There is no newer version available."
             if [[ $INSTALL != "force" ]]; then
@@ -3293,8 +3393,18 @@ case $type in
         ;;
 esac
 
+if [[ (-n $licence ) ]]; then
+    printlog "Install licence"
+    if [[ $DEBUG -eq 0 ]]; then
+        $licence
+    else
+        printlog "DEBUG mode enabled, not running update tool"
+    fi
+fi
+
 # MARK: Finishing — print installed application location and version
 finishing
 
 # all done!
 cleanupAndExit 0
+update
