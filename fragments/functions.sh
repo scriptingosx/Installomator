@@ -834,6 +834,19 @@ installPkgInZip() {
     installFromPKG
 }
 
+installPkgInDmgInZip() {
+    # unzip the archive
+    printlog "Unzipping $archiveName"
+    tar -xf "$archiveName"
+    if [[ -s "$tmpDir/$dmgName" ]]; then
+        archiveName="$dmgName"
+        printlog "found $archiveName"
+    else
+        cleanupAndExit 22 "couldn't find dmg in zip $archiveName" ERROR
+    fi
+    installPkgInDmg
+}
+
 installAppInDmgInZip() {
     # unzip the archive
     printlog "Unzipping $archiveName"
