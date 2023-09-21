@@ -34,6 +34,11 @@ if [[ -z $expectedTeamID ]]; then
     exit 1
 fi
 
+if [[ -z $dmgName ]] && [[ $type == "pkgInDmgInZip" ]]; then
+    printlog "need to provide 'dmgName' for pkgInDmgInZip" ERROR
+    exit 1
+fi
+
 # Are we only asked to return label name
 if [[ $RETURN_LABEL_NAME -eq 1 ]]; then
     printlog "Only returning label name." REQ
@@ -41,6 +46,7 @@ if [[ $RETURN_LABEL_NAME -eq 1 ]]; then
     echo "$name"
     exit
 fi
+
 
 # MARK: application download and installation starts here
 
@@ -56,6 +62,7 @@ printlog "appCustomVersion function: $(if type 'appCustomVersion' 2>/dev/null | 
 printlog "versionKey=${versionKey}" DEBUG
 printlog "packageID=${packageID}" DEBUG
 printlog "pkgName=${pkgName}" DEBUG
+printlog "dmgName=${dmgName}" DEBUG
 printlog "choiceChangesXML=${choiceChangesXML}" DEBUG
 printlog "expectedTeamID=${expectedTeamID}" DEBUG
 printlog "blockingProcesses=${blockingProcesses}" DEBUG
@@ -361,6 +368,9 @@ case $type in
         ;;
     pkgInZip)
         installPkgInZip
+        ;;
+    pkgInDmgInZip)
+        installPkgInDmgInZip
         ;;
     appInDmgInZip)
         installAppInDmgInZip

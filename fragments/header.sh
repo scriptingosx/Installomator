@@ -188,6 +188,7 @@ NOTIFY_DIALOG=0
 #     - tbz
 #     - pkgInDmg
 #     - pkgInZip
+#     - pkgInDmgInZip
 #     - appInDmgInZip
 #     - updateronly     This last one is for labels that should only run an updateTool (see below)
 #
@@ -262,9 +263,12 @@ NOTIFY_DIALOG=0
 #   When a workflow has no blocking processes, use
 #     blockingProcesses=( NONE )
 #
-# - pkgName: (optional, only used for pkgInDmg, dmgInZip, and appInDmgInZip)
+# - pkgName: (optional, only used for pkgInDmg, dmgInZip, pkgInDmgInZip and appInDmgInZip)
 #   File name or path to the pkg/dmg file _inside_ the dmg or zip.
 #   When not given the pkgName is derived from the $name
+#
+# - dmgName: (required, only used for appInDmgInZip)
+#   File name or path to the dmg file _inside_ the zip.
 #
 # - updateTool:
 # - updateToolArguments:
